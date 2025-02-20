@@ -1,0 +1,6 @@
+# 忽略 node_modules 目录
+node_modules
+# 忽略 Vite 打包输出目录
+dist
+# 忽略 .env 文件（如果有敏感信息）
+.env
