@@ -4,3 +4,5 @@ node_modules
 dist
 # 忽略 .env 文件（如果有敏感信息）
 .env
+
+

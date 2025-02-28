@@ -31,9 +31,12 @@
 
 <script setup>
 import { ref } from 'vue';
+import axios from 'axios';
+import { useRouter } from 'vue-router';
 
 // 表单引用
 const formRef = ref(null);
+const router = useRouter();
 
 // 注册表单数据
 const registerForm = ref({
@@ -63,16 +66,6 @@ const validateUsername = (rule, value, callback) => {
     }
 };
 
-// 自定义密码复杂度验证规则：至少包含一个大写字母、一个小写字母和一个数字
-const validatePasswordComplexity = (rule, value, callback) => {
-    const pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
-    if (pattern.test(value)) {
-        callback();
-    } else {
-        callback(new Error('密码至少包含一个大写字母、一个小写字母和一个数字'));
-    }
-};
-
 // 自定义手机号运营商验证规则：简单验证是否为常见运营商号码段
 const validatePhoneOperator = (rule, value, callback) => {
     const commonOperators = /^(13[0-9]|14[5-9]|15[0-3,5-9]|16[2,5,6,7]|17[0-8]|18[0-9]|19[1,8,9])\d{8}$/;
@@ -93,7 +86,6 @@ const registerRules = ref({
     password: [
         { required: true, message: '请输入密码', trigger: 'blur' },
         { min: 8, message: '密码长度不能少于 8 个字符', trigger: 'blur' },
-        { validator: validatePasswordComplexity, trigger: 'blur' }
     ],
     confirmPassword: [
         { required: true, message: '请再次输入密码', trigger: 'blur' },
@@ -123,15 +115,34 @@ const registerRules = ref({
 
 // 处理注册事件
 const handleRegister = async () => {
-    await formRef.value.validate((valid) => {
+    formRef.value.validate((valid) => {
         if (valid) {
-            // 这里可以添加实际的注册逻辑，例如发送请求到后端
-            console.log('注册成功，用户名：', registerForm.value.username);
-        } else {
-            console.log('验证失败');
-            return false;
+            // 验证通过，构造请求体
+            const requestBody = {
+                username: registerForm.value.username,
+                password: registerForm.value.password,
+                phone_number: registerForm.value.phone,
+                email: registerForm.value.email
+            }
+            // 发送注册请求
+            axios.post('http://localhost:3000/register', requestBody)
+                .then((response) => {
+                    if(response.status === 200){
+                        // 注册成功，跳转到登录页面
+                        alert('注册成功！');
+                        router.push('/login');
+                    }
+                })
+                .catch((error) => {
+                    // 注册失败
+                    console.error('注册请求出错:', error);
+                    alert('注册过程中出现错误，请稍后再试！');
+                })
         }
-    });
+        else{
+            alert('注册信息不合法，请检查输入信息！');
+        }
+    })
 };
 
 // 处理重置事件
