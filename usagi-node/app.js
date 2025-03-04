@@ -4,6 +4,7 @@ const cors = require('cors');
 const util = require('util');
 const bcrypt = require('bcrypt');
 const Joi = require('joi');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const port = 3000;
@@ -83,21 +84,36 @@ app.post('/register', async (req, res) => {
 app.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
+
         // 从数据库查找用户
         const results = await query('SELECT * FROM userInf WHERE username = ?', [username]);
         if (results.length === 0) {
             return res.status(401).json({ message: '用户名或密码错误' });
         }
+
         const user = results[0];
+
         // 验证密码
         const match = await bcrypt.compare(password, user.password);
-        if (match) {
-            res.status(200).json({ message: '登录成功', role: user.role });
-        } else {
-            res.status(401).json({ message: '用户名或密码错误' });
+        if (!match) {
+            return res.status(401).json({ message: '用户名或密码错误' });
         }
+
+        // 生成 JWT
+        const token = jwt.sign(
+            { userId: user.id, role: user.role }, // JWT 负载（Payload）
+            'your-secret-key', // 用于签名的密钥
+            { expiresIn: '1h' } // 过期时间
+        );
+
+        // 返回 JWT 和用户信息
+        res.status(200).json({
+            message: '登录成功',
+            token, // 返回 JWT
+            role: user.role,
+        });
     } catch (error) {
-        console.error('登录错误详情:', error.stack); // 必须打印堆栈
+        console.error('登录错误详情:', error.stack); // 打印堆栈
         res.status(500).json({ message: '服务器内部错误' });
     }
 });

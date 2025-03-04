@@ -20,6 +20,9 @@
           <el-menu-item index="/">
             <router-link to="/">首页</router-link>
           </el-menu-item>
+          <el-menu-item index="/function">
+            <router-link to="/function">创建图表</router-link>
+          </el-menu-item>
           <el-menu-item index="/about">
             <router-link to="/about">关于我们</router-link>
           </el-menu-item>
@@ -135,6 +138,18 @@ watch(() => route.path, (newPath) => {
   }
   .login-register-buttons .el-button {
     padding: 5px 10px;
+  }
+}
+@media (max-width: 850px){
+  .avatar{
+    display: none;
+  }
+  .username {
+    font-size: small;
+  }
+
+  .el-button {
+    display: none;
   }
 }
 </style>

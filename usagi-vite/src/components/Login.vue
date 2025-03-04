@@ -55,27 +55,19 @@
 
 <script setup>
 import { ref } from 'vue';
-import axios from 'axios';
 import { useUserStore } from '../stores/userStore.js';
 import { useRouter } from 'vue-router';
 
 const userStore = useUserStore();
 const router = useRouter();
 
-
 // 表单引用
 const formRef = ref(null);
-
-// 登录表单数据
 const loginForm = ref({
   username: '',
   password: ''
 });
-
-// 是否记住密码
 const rememberPassword = ref(false);
-
-// 错误信息
 const errorMessage = ref('');
 
 // 表单验证规则
@@ -90,45 +82,34 @@ const loginRules = ref({
 
 // 处理登录事件
 const handleLogin = async () => {
-  await formRef.value.validate((valid) => {
-    console.log('表单验证结果:', valid);
-    if (valid) {
-      const { username, password } = loginForm.value;
-      console.log('准备发送登录请求，URL:', 'http://localhost:3000/login', '数据:', { username, password });
-      axios.post('http://localhost:3000/login', {
-        username,
-        password
-      })
-        .then(response => {
-          console.log('登录请求成功，响应信息:', response.data);
-          errorMessage.value = '';
-          // 登录成功，调用 userStore 的 login 方法更新状态
-          if (userStore.login(username, password)) {
-            // 登录成功提示
-            alert('登录成功！');
-            console.log("登录状态", userStore.isLoggedIn);
-            // 跳转到主页
-            router.push('/');
-          }
-        })
-        .catch(error => {
-          console.error('登录请求失败:', error);
-          if (error.response) {
-            errorMessage.value = error.response.data.message || '登录失败，请稍后重试';
-          } else if (error.request) {
-            errorMessage.value = '没有收到服务器响应，请检查网络连接';
-          } else {
-            errorMessage.value = '发生未知错误，请稍后重试';
-          }
-        });
-    } else {
-      console.log('验证失败');
-      errorMessage.value = '用户名或密码不能为空';
-      return false;
-    }
-  });
-};
+  try {
+    // 1. 执行表单验证
+    const valid = await formRef.value.validate();
+    if (!valid) return;
 
+    // 2. 调用Store登录
+    await userStore.login({
+      username: loginForm.value.username,
+      password: loginForm.value.password
+    });
+
+    // 3. 记住密码处理
+    if (!rememberPassword.value) {
+      loginForm.value.password = ''; // 清空密码
+    }
+
+    // 4. 跳转到首页
+    router.replace('/');
+  } catch (error) {
+    // 错误处理
+    errorMessage.value = error.message || '登录失败，请稍后重试';
+    
+    // 开发环境打印错误
+    if (import.meta.env.DEV) {
+      console.error('登录错误详情：', error);
+    }
+  }
+};
 // 处理重置事件
 const handleReset = () => {
   formRef.value.resetFields();
